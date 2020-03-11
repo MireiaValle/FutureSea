@@ -1,0 +1,360 @@
+---
+title: "traits_matrix"
+author: "Mireia Valle"
+date: "8/19/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+```{r}
+#installing and loading libraries
+library (tidyverse)
+library (here)
+#install.packages ("naniar")
+library(naniar)#to explore missing values
+library(ggplot2)
+#install.packages("skimr")
+library(skimr)
+library (kableExtra)
+```
+
+## Creating the traits matrix joining the life traits data frame with the fishbase dataset
+```{r}
+#setwd("~/github_annex")
+```
+## Reading the table we got from FishLife
+
+```{r}
+species_lt2018 <- read_csv(here("data", "species_lt2018_dropped.csv"))
+unique (species_lt2018$am_sid) %>% length () #12363
+sum(is.na(species_lt2018$am_sid))
+```
+## Reading the table we got from Fishbase
+
+```{r}
+fishbase_traits <- read_csv (here("data", "fishbase_traits.csv"))
+as.tibble (fishbase_traits)
+unique (fishbase_traits$sciname) %>% length () #12204
+sum(is.na(fishbase_traits$sciname)) #0
+```
+
+## Reading the table from Beukhof et al 2019 https://doi.pangaea.de/10.1594/PANGAEA.900866 A trait collection of marine fish species from North Atlantic and Northeast Pacific continental shelf seas. Sourced: https://opentraits.org/datasets.html
+```{r}
+north_traits <- read_csv (here("data", "TraitCollectionFishNAtlanticNEPacificContShelf_Beukhofetal2019.csv"))
+as.tibble (north_traits)
+unique (north_traits$taxon) %>% length () #2010
+sum(is.na(north_traits$taxon)) #138
+
+# there are more than one value for the different traits, we need to summarize by spp in order to join this table to our other tables. We will do selecting the first value, but it will be interesting to explore other options
+
+north_traits_spp <- north_traits %>%
+  group_by(taxon)  %>%
+  summarize(family  = first (family) , 
+            genus = first (genus), 
+            species = first (species),
+            taxonomic.rank = first (taxonomic.rank), 
+            LME = first (LME), 
+            FAO = first (FAO), 
+            habitat = first (habitat), 
+            reference.habitat = first (reference.habitat),
+            feeding.mode = first (feeding.mode),
+            reference.feeding.mode = first (reference.feeding.mode), 
+            tl = first (tl), 
+            level.tl = first (level.tl), 
+            reference.tl = first (reference.tl), 
+            body.shape = first (body.shape), 
+            fin.shape = first (fin.shape), 
+            AR = first (AR), 
+            level.AR = first (level.AR),
+            reference.AR = first (reference.AR), 
+            offspring.size = first (offspring.size), 
+            level.offspring.size = first (level.offspring.size), 
+            reference.offspring.size = first (reference.offspring.size), 
+            spawning.type = first (spawning.type), 
+            reference.spawning.type = first (reference.spawning.type),
+            age.maturity = first (age.maturity), 
+            level.age.maturity = first (level.age.maturity), 
+            reference.age.maturity = first (reference.age.maturity), 
+            fecundity = first (fecundity), 
+            level.fecundity = first (level.fecundity), 
+            reference.fecundity = first (reference.fecundity), 
+            length.infinity = first (length.infinity), 
+            growth.coefficient = first (growth.coefficient),
+            level.growth = first (level.growth), 
+            reference.growth = first (reference.growth), 
+            length.max = first (length.max), 
+            level.length.max = first (level.length.max), 
+            reference.length.max = first (reference.length.max), 
+            age.max = first (age.max),
+            level.age.max = first (level.age.max), 
+            reference.age.max = first (reference.age.max))
+
+# Select the traits we want to keep 
+north_traits_spp <- north_traits_spp  %>% 
+  select (sciname = taxon,
+          family  =  family , 
+          genus =  genus, 
+          species =  species,
+          taxonomic.rank =  taxonomic.rank, 
+          LME =  LME, 
+          FAO =  FAO, 
+          habitat =  habitat, 
+          reference.habitat =  reference.habitat,
+          feeding.mode =  feeding.mode,
+          reference.feeding.mode =  reference.feeding.mode, 
+          tl =  tl, 
+          level.tl =  level.tl, 
+          reference.tl =  reference.tl, 
+          body.shape =  body.shape, 
+          fin.shape =  fin.shape, 
+          AR =  AR, 
+          level.AR =  level.AR,
+          reference.AR =  reference.AR, 
+          offspring.size =  offspring.size, 
+          level.offspring.size =  level.offspring.size, 
+          reference.offspring.size =  reference.offspring.size, 
+          spawning.type =  spawning.type, 
+          reference.spawning.type =  reference.spawning.type,
+          age.maturity =  age.maturity, 
+          level.age.maturity =  level.age.maturity, 
+          reference.age.maturity =  reference.age.maturity, 
+          fecundity =  fecundity, 
+          level.fecundity =  level.fecundity, 
+          reference.fecundity =  reference.fecundity, 
+          length.infinity =  length.infinity, 
+          growth.coefficient =  growth.coefficient,
+          level.growth =  level.growth, 
+          reference.growth =  reference.growth, 
+          length.max =  length.max, 
+          level.length.max =  level.length.max, 
+          reference.length.max =  reference.length.max, 
+          age.max =  age.max,
+          level.age.max =  level.age.max, 
+          reference.age.max =  reference.age.max)
+```
+
+## We first join FishLife and Fishbase tables
+```{r}
+traits_matrix_lt_fishbase <- left_join (fishbase_traits, species_lt2018, by= "sciname")
+
+as.tibble (traits_matrix_lt_fishbase)
+unique (traits_matrix_lt_fishbase$sciname) %>% length () #12204
+sum(is.na(traits_matrix_lt_fishbase$sciname)) # 0
+```
+
+## We join north traits table to the one we have created above
+
+```{r}
+traits_matrix <- left_join (traits_matrix_lt_fishbase, north_traits_spp, by= "sciname")
+
+#we clean the data frame
+traits_matrix <- traits_matrix %>% 
+  select (-X1.x, -Species, -X1.y, -X1_1, -X, -family.y, -genus.y, -species.y)
+
+#we save it
+#write.csv (traits_matrix, file = "traits_matrix.csv")
+```
+
+## We explore the data 
+```{r}
+summary (traits_matrix)
+colnames (traits_matrix)
+skim <- skim(traits_matrix)
+
+skim_table <- skim %>% 
+  select (skim_variable, n_missing, complete_rate) %>% 
+  arrange (desc(n_missing))
+
+kable(skim_table) %>% 
+  kable_styling(bootstrap_options = "striped", 
+                full_width = FALSE) 
+
+#Exploring NA's using naniar::gg_miss_var()
+
+gg_miss_var(traits_matrix)
+
+order_NAs <- traits_matrix %>%
+  group_by(order) %>%
+  miss_var_summary()
+
+
+gg_miss_fct(x = traits_matrix, fct = class) + labs(title = "NA in traits matrix by class")
+
+## We need to make decision on which var we want to keep and which we want to remove
+#labels (traits_matrix)
+
+#selected traits
+
+traits_selected <- subset(traits_matrix, select=c(
+  "SpecCode", 
+  "sciname", 
+  "am_sid", 
+  "genus.x",
+  "species.x",
+  "kingdom", 
+  "phylum", 
+  "class", 
+  "order", 
+  "family.x", 
+  "taxonomic.rank", 
+  "Loo",
+  "length.infinity", 
+  "length.max",
+  "level.length.max",
+  "reference.length.max",
+  "K", 
+  "level.growth",	
+  "reference.growth", 
+  "growth.coefficient",
+  "Winfinity", 
+  "tmax", 
+  "level.age.max",
+  "reference.age.max", 
+  "age.max", 
+  "tm" , 
+  "age.maturity",
+  "level.age.maturity",
+  "reference.age.maturity",
+  "M" , 
+  "Lm" , 
+  "Temperature" ,
+  "predicted_lt",
+  "unique_lt_values",
+  "count_predicted_lt",
+  "bodyshape",
+  "body.shape",
+  "BodyShapeI",
+  "demerspelag",
+  "habitat",
+  "reference.habitat",
+  "depthrangedeep", 
+  "vulnerability", 
+  "importance", 
+  "pricecateg", 
+  "pd50", 
+  "troph", 
+  "setrop", 
+  "tl",
+  "level.tl",
+  "reference.tl",
+  "DietTroph", 
+  "DietSeTroph", 
+  "FoodTroph", 
+  "FoodSeTroph", 
+  "FeedingType", 
+  "feeding.mode",
+  "reference.feeding.mode",
+  "fecuntype", 
+  "fecun_min", 
+  "fecun_max", 
+  "fecundity", 
+  "level.fecundity", 
+  "reference.fecundity",
+  "level.offspring.size",
+  "reference.offspring.size",
+  "offspring.size",
+  "spawning.type",
+  "reference.spawning.type",  
+  "OperculumPresent", 
+  "SexualAttributes",
+  "SexMorphology", 
+  "TypeofEyes", 
+  "PosofMouth", 
+  "TypeofMouth", 
+  "CaudalFinI", 
+  "CShape", 
+  "fin.shape",
+  "PelvicsAttributes", 
+  "IUCN_Code", 
+  "Protected", 
+  "EnvTemp", 
+  "Resilience", 
+  "AdultType", 
+  "AdultMode",
+  "level.AR",
+  "reference.AR",
+  "AR",
+  "LME",
+  "FAO" ,
+  "Epipelagic",
+  "Mesopelagic",
+  "Bathypelagic",
+  "Abyssopelagic",
+  "Hadopelagic",
+  "Benthic",
+  "Sessile",
+  "Mobile",
+  "Demersal",
+  "Endofauna",
+  "Pelagic"))
+  
+
+#we save the table
+#write.csv (traits_selected, file = "traits_selected.csv")
+```
+## Exploring the data once we selected the traits
+```{r}
+## We explore the data 
+summary (traits_selected)
+colnames (traits_selected)
+skim_selected <- skim(traits_selected)
+
+skim_table_selected <- skim_selected %>% 
+  select (skim_variable, n_missing, complete_rate) %>% 
+  arrange (desc(n_missing))
+
+kable(skim_table_selected) %>% 
+  kable_styling(bootstrap_options = "striped", 
+                full_width = FALSE) 
+
+#Exploring NA's using naniar::gg_miss_var()
+
+gg_miss_var(traits_selected)
+
+order_NAs <- traits_selected %>%
+  group_by(order) %>%
+  miss_var_summary()
+
+
+gg_miss_fct(x = traits_selected, fct = class) + labs(title = "NA in traits matrix by class")
+```
+
+## Wrangling the data for further analysis 
+
+```{r}
+traits_selected_short <- subset(traits_matrix, select=c("am_sid",
+                                                  "class",
+                                                  "order",
+                                                  "family.x",
+                                                  "demerspelag",
+                                                  "bodyshape",
+                                                  "IUCN_Code",
+                                                  "Resilience",
+                                                  "EnvTemp",
+                                                  "FeedingType",
+                                                  "importance",
+                                                  "pricecateg",
+                                                  "Loo",
+                                                  "K",
+                                                  "Winfinity",
+                                                  "tmax",
+                                                  "tm",
+                                                  "M",
+                                                  "Lm",
+                                                  "depthrangedeep",
+                                                  "pd50",
+                                                  "vulnerability"))
+```
+
+
+```{r}
+USE MUTATE
+```
+
+
