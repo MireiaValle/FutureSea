@@ -7,7 +7,11 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r setup}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
 library(raster)
 library (tidyverse) 
 library (data.table)
@@ -17,15 +21,12 @@ library (data.table)
 
 ```{r}
 #From MAZU
-#dir_am <- '/home/shares/ohi/git-annex/globalprep/_raw_data/aquamaps'
+dir_am <- '/home/shares/ohi/git-annex/globalprep/_raw_data/aquamaps'
+#dir_am <- 'N:/github_annex/Aquamaps'
 
 #From BC3 PC
-dir_am <- 'M:/git-annex/globalprep/_raw_data/aquamaps'
-#dir_am <- 'N:/github_annex/Aquamaps'
+#dir_am <- 'M:/git-annex/globalprep/_raw_data/aquamaps'
 #dir_am <- "C:/Users/mireia.valle/Documents/git-annex"
-
-#From personal pc
-#dir_am <- COPIAR DIRECTORIO DONDE GUARDO LOS DATOS DE AQUAMAPS
 
 spp_cells <- data.table::fread(file.path(dir_am, 'd2018/hcaf_species_native_ver0816c.csv'))
   ### fread() way faster
@@ -62,6 +63,9 @@ base_df <- rasterToPoints(basemap) %>%
   as.data.frame() %>%
   setNames(c('long', 'lat', 'loiczid')) %>%
   mutate(loiczid = as.integer(loiczid))
+
+#We save this data frame for further reference to long lat and LOICZID
+#write.csv (base_df, file = "base_df.csv")
 ```
 
 Using lat and long as spatial references common to both `spp_cells` and `base_df`, join fixed LOICZID values to the `spp_cells` dataframe.  Use `data.table` keyed join!
@@ -95,10 +99,21 @@ That's more like it!  no NAs
 
 ```{r}
 spp_cells_final <- spp_cells_fixed_dt %>%
-  select(am_sid, loiczid, prob) %>%
+  select(am_sid, prob, loiczid) %>%
   distinct()
 
-data.table::fwrite(spp_cells_final, 
-                   file.path(dir_am, 'd2018/hcaf_species_native_ver0816c_fixed.csv'))
+#data.table::fwrite(spp_cells_final, 
+#                   file.path(dir_am, 'd2018/hcaf_species_native_ver0816c_fixed.csv'))
+```
+
+### Write out the new corrected data keeping lat long columns
+
+```{r}
+#spp_cells_final_lat_long <- spp_cells_fixed_dt %>%
+#  select(am_sid, prob, loiczid, lat, long) %>%
+#  distinct()
+
+#write.csv (spp_cells_final_lat_long, file = "hcaf_species_native_ver0816c_fixed_lat_long.csv")
+
 ```
 
