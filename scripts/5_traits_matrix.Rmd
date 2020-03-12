@@ -16,7 +16,8 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 #installing and loading libraries
 library (tidyverse)
 library (here)
-#install.packages ("naniar")
+#devtools::install_github("stulacy/naniar")
+ library(naniar)
 library(naniar)#to explore missing values
 library(ggplot2)
 #install.packages("skimr")
@@ -24,10 +25,12 @@ library(skimr)
 library (kableExtra)
 ```
 
-## Creating the traits matrix joining the life traits data frame with the fishbase dataset
 ```{r}
 #setwd("~/github_annex")
 ```
+
+## Creating the traits matrix joining the life traits data frame with the fishbase dataset
+
 ## Reading the table we got from FishLife
 
 ```{r}
@@ -183,7 +186,6 @@ order_NAs <- traits_matrix %>%
   group_by(order) %>%
   miss_var_summary()
 
-
 gg_miss_fct(x = traits_matrix, fct = class) + labs(title = "NA in traits matrix by class")
 
 ## We need to make decision on which var we want to keep and which we want to remove
@@ -320,7 +322,6 @@ gg_miss_var(traits_selected)
 order_NAs <- traits_selected %>%
   group_by(order) %>%
   miss_var_summary()
-
 
 gg_miss_fct(x = traits_selected, fct = class) + labs(title = "NA in traits matrix by class")
 ```
