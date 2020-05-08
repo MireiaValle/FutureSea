@@ -41,5 +41,13 @@ vignettes/*.pdf
 # csv files
 *.csv
 
-# shapefile data directory
+# data directory
 data/
+
+# figures directory
+figures/
+
+# figures directory
+tables/
+
+
